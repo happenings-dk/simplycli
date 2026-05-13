@@ -13,7 +13,19 @@ Rust CLI for the [Simply.com API](https://www.simply.com/en/docs/api/).
 
 ## Install
 
-From this repository:
+Install the CLI and the Claude Code/Codex skills:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/scripts/install.sh | bash
+```
+
+Install only the CLI:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/scripts/install.sh | bash -s -- --no-skills
+```
+
+From a local checkout:
 
 ```sh
 cargo install --path . --force

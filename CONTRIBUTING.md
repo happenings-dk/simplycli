@@ -16,6 +16,12 @@ The binary is installed locally with:
 cargo install --path . --force
 ```
 
+To test the install script locally:
+
+```sh
+SIMPLYCLI_REPO_URL="$(pwd)" SIMPLYCLI_RAW_BASE="file://$(pwd)" bash scripts/install.sh --skills-only
+```
+
 ## Credentials
 
 Do not commit real Simply.com credentials. The CLI reads saved credentials from `~/.config/simply/config.json`, or from `SIMPLY_ACCOUNT` and `SIMPLY_API_KEY`.

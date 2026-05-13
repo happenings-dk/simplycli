@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Command line client for the Simply.com API"
+authors = ["Happenings Group A/S"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/happenings-dk/simplycli"
 keywords = ["simply", "dns", "domains", "cli"]
 categories = ["command-line-utilities", "api-bindings"]
 
