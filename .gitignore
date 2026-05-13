@@ -1,0 +1,12 @@
+/target/
+/.idea/
+/.vscode/
+/.DS_Store
+*.swp
+*.swo
+
+# Local credentials/config should never be committed.
+.env
+.env.*
+config.json
+simply-config.json
