@@ -2,6 +2,14 @@
 
 Rust CLI for the [Simply.com API](https://www.simply.com/en/docs/api/).
 
+## Quick Install
+
+Install `simply` plus the Claude Code and Codex skills:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/scripts/install.sh | bash
+```
+
 ## Features
 
 - Product and invoice listing
@@ -13,7 +21,13 @@ Rust CLI for the [Simply.com API](https://www.simply.com/en/docs/api/).
 
 ## Install
 
-Install the CLI and the Claude Code/Codex skills:
+The quick installer installs:
+
+- `simply` into Cargo's binary directory, usually `~/.cargo/bin`
+- Claude Code skill: `~/.claude/skills/simply-cli`
+- Codex skill: `~/.codex/skills/simply-cli`
+
+Full install:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/scripts/install.sh | bash
@@ -23,6 +37,12 @@ Install only the CLI:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/scripts/install.sh | bash -s -- --no-skills
+```
+
+Install only the skills:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/scripts/install.sh | bash -s -- --skills-only
 ```
 
 From a local checkout:
