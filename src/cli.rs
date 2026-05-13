@@ -46,6 +46,9 @@ pub enum Command {
     Logout(LogoutArgs),
     /// List account products.
     Products,
+    /// Search a bare name across common TLDs and show available domains.
+    #[command(alias = "available")]
+    Search(SearchDomainsArgs),
     /// Manage DNS zones and records.
     Dns {
         #[command(subcommand)]
@@ -186,6 +189,8 @@ pub enum MailCommand {
 pub enum DomainsCommand {
     /// Check whether a domain can be registered or transferred.
     Check(DomainArgs),
+    /// Search a bare name across common TLDs and show available domains.
+    Search(SearchDomainsArgs),
     /// Register/buy a new domain with a DNS service.
     #[command(alias = "buy")]
     Register(RegisterDomainArgs),
@@ -223,6 +228,18 @@ pub struct ProductArgs {
 pub struct DomainArgs {
     /// Fully qualified domain name.
     pub domain: String,
+}
+
+#[derive(Debug, Args)]
+pub struct SearchDomainsArgs {
+    /// Bare domain name, for example "spendless".
+    pub name: String,
+    /// TLD to check. Repeat to override the default TLD list.
+    #[arg(long = "tld", action = ArgAction::Append)]
+    pub tlds: Vec<String>,
+    /// Show taken/error results too.
+    #[arg(long)]
+    pub all: bool,
 }
 
 #[derive(Debug, Args)]

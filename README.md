@@ -112,6 +112,10 @@ simply registry nameservers set example.com \
 # Check domain availability
 simply domains check example.com
 
+# Search a bare name across common TLDs
+simply search spendless
+simply domains search spendless --all
+
 # Register/buy a new domain with DNS service
 simply domains register example.com
 # `buy` is also accepted as an alias:

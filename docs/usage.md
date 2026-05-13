@@ -36,6 +36,8 @@ simply products
 
 ```sh
 simply domains check example.com
+simply search spendless
+simply domains search spendless --all
 simply domains register example.com
 simply domains buy example.com --yes
 simply domains transfer example.com --authid AUTHCODE

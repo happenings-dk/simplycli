@@ -21,6 +21,11 @@ use models::{
 };
 use output::{ApiOutput, print_output};
 
+const DEFAULT_DOMAIN_SEARCH_TLDS: &[&str] = &[
+    "com", "dk", "io", "app", "co", "net", "org", "dev", "site", "online", "shop", "eu", "ai",
+    "money", "finance", "cloud", "software", "tools", "group", "company", "xyz",
+];
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
     if let Command::Login(args) = cli.command {
@@ -83,6 +88,7 @@ fn execute(client: &SimplyClient, command: Command) -> Result<ApiOutput> {
             unreachable!("auth commands are handled before API client creation")
         }
         Command::Products => client.get_json("/2/my/products/"),
+        Command::Search(args) => search_domains(client, args.name, args.tlds, args.all),
         Command::Dns { command } => execute_dns(client, command),
         Command::Registry { command } => execute_registry(client, command),
         Command::Nameservers { command } => execute_nameservers(client, command),
@@ -204,6 +210,7 @@ fn execute_mail(client: &SimplyClient, command: MailCommand) -> Result<ApiOutput
 fn execute_domains(client: &SimplyClient, command: DomainsCommand) -> Result<ApiOutput> {
     match command {
         DomainsCommand::Check(args) => client.get_json(&client.domaincheck_path(&args.domain)),
+        DomainsCommand::Search(args) => search_domains(client, args.name, args.tlds, args.all),
         DomainsCommand::Register(args) => {
             confirm_dangerous(
                 args.yes,
@@ -264,6 +271,53 @@ fn execute_domains(client: &SimplyClient, command: DomainsCommand) -> Result<Api
             )
         }
     }
+}
+
+fn search_domains(
+    client: &SimplyClient,
+    name: String,
+    tlds: Vec<String>,
+    include_all: bool,
+) -> Result<ApiOutput> {
+    let tlds = if tlds.is_empty() {
+        DEFAULT_DOMAIN_SEARCH_TLDS
+            .iter()
+            .map(|tld| (*tld).to_owned())
+            .collect()
+    } else {
+        tlds
+    };
+    let name = name.trim().trim_end_matches('.').to_owned();
+    if name.is_empty() {
+        bail!("domain search name cannot be empty");
+    }
+
+    let mut results = Vec::new();
+    for tld in tlds {
+        let tld = tld.trim().trim_start_matches('.').trim_end_matches('.');
+        if tld.is_empty() {
+            continue;
+        }
+
+        let domain = format!("{name}.{tld}");
+        let response = client.get_value(&client.domaincheck_path(&domain))?;
+        let Some(domain_result) = response.get("domain") else {
+            continue;
+        };
+
+        let available = domain_result
+            .get("available")
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false);
+        if available || include_all {
+            results.push(domain_result.clone());
+        }
+    }
+
+    Ok(ApiOutput::Json(serde_json::json!({
+        "query": name,
+        "results": results,
+    })))
 }
 
 fn execute_billing(client: &SimplyClient, command: BillingCommand) -> Result<ApiOutput> {

@@ -42,6 +42,13 @@ impl SimplyClient {
         self.send(self.auth(self.http.get(self.url(path))))
     }
 
+    pub fn get_value(&self, path: &str) -> Result<Value> {
+        match self.get_json(path)? {
+            ApiOutput::Json(value) => Ok(value),
+            ApiOutput::Text(_) => bail!("expected JSON response from API"),
+        }
+    }
+
     pub fn get_text_query(&self, path: &str, params: &[(&str, String)]) -> Result<ApiOutput> {
         self.send(self.auth(self.http.get(self.url(path))).query(params))
     }
