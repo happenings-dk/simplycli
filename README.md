@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/happenings-dk/simplycli/main/script
 - Product and invoice listing
 - Domain availability checks, registration, transfer, and DNS service ordering
 - Registry nameserver reads and updates
-- DNS record create, update, delete, reload, DDNS, and DynDNS
+- DNS record create, update, delete, and reload
 - DNSSEC and mail account operations
 - Multiple saved account profiles
 
@@ -53,26 +53,25 @@ cargo install --path . --force
 
 ## Setup
 
-Create an API key in the Simply.com control panel, then export credentials:
+Create an API key in the Simply.com control panel, then export it:
 
 ```sh
-export SIMPLY_ACCOUNT=S123456
 export SIMPLY_API_KEY=your-api-key
 ```
 
-You can also pass `--account` and `--api-key` on any command.
+You can also pass `--api-key` on any command. The API key is sent as a Bearer token and identifies the account, so `--account` / `SIMPLY_ACCOUNT` is no longer needed. It is still accepted, so existing setups keep working.
 
 To save credentials globally for your user:
 
 ```sh
-simply login --account S123456
+simply login
 ```
 
 To save more than one account, give each one a profile name:
 
 ```sh
-simply login --name personal --account S123456
-simply login --name work --account S654321
+simply login --name personal
+simply login --name work
 simply accounts
 simply use work
 simply --profile personal products
@@ -97,9 +96,6 @@ simply dns update-record example.com 123 --type txt --name _verification --data 
 
 # Delete a record
 simply dns delete-record example.com 123
-
-# Update dynamic DNS using the client IP seen by Simply.com
-simply ddns --hostname home.example.com
 
 # Read registry nameservers
 simply registry nameservers get example.com
@@ -141,13 +137,15 @@ simply billing invoices
 
 Commands that can charge a card or disrupt DNS require confirmation unless `--yes` is passed.
 
-JSON API responses are printed as pretty JSON by default. Text endpoints such as `ddns` and `dyndns` print plain text unless `--json` is passed.
+JSON API responses are printed as pretty JSON by default. Non-JSON responses print as plain text unless `--json` is passed.
 
 More examples are in [docs/usage.md](docs/usage.md).
 
 ## API Coverage
 
-The CLI covers the documented Simply.com API v2 endpoints for products, DNS records, DNS zone reloads, registry nameservers, DNSSEC, mail account creation, domain checks, invoices, server-status messages, DNS service ordering, DDNS, and DynDNS.
+The CLI covers the documented Simply.com API v2 endpoints for products, DNS records, DNS zone reloads, registry nameservers, DNSSEC, mail account creation, domain checks, invoices, server-status messages, and DNS service ordering.
+
+Dynamic DNS is not part of this CLI. Routers and DDNS clients such as ddclient or inadyn should use `https://ddns.simply.com/nic/update`; use `simply dns add-record` and `simply dns update-record` to manage records directly.
 
 ## Development
 

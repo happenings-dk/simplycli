@@ -1,6 +1,6 @@
 ---
 name: simply-cli
-description: Use when operating Simply.com through the local `simply` CLI, including listing Simply products/domains, checking domain availability, buying/registering domains, transferring domains, ordering DNS service, reading or changing nameservers, editing DNS records, DDNS/DynDNS updates, invoices, mail accounts, DNSSEC, or managing multiple Simply account profiles.
+description: Use when operating Simply.com through the local `simply` CLI, including listing Simply products/domains, checking domain availability, buying/registering domains, transferring domains, ordering DNS service, reading or changing nameservers, editing DNS records, invoices, mail accounts, DNSSEC, or managing multiple Simply account profiles.
 ---
 
 # Simply CLI
@@ -25,7 +25,7 @@ simply --profile <name> products
 Manage profiles:
 
 ```sh
-simply login --name <profile> --account <S-account-number>
+simply login --name <profile>
 simply accounts
 simply use <profile>
 simply logout --name <profile>
@@ -70,7 +70,6 @@ simply billing invoices
 simply status messages
 simply registry dnssec get example.com
 simply mail add-account example.com --username hello --password '<password>'
-simply ddns --hostname home.example.com
 ```
 
 ## Safety Rules
@@ -85,5 +84,7 @@ simply ddns --hostname home.example.com
 ## Troubleshooting
 
 - If authentication fails, run `simply accounts` and check the selected profile. Use `simply use <profile>` or `--profile <profile>`.
+- The API key alone identifies the account; `--account` / `SIMPLY_ACCOUNT` is no longer needed.
+- Dynamic DNS is not part of this CLI. Routers and DDNS clients use `https://ddns.simply.com/nic/update`; to change a record directly, use `simply dns update-record`.
 - If network access is blocked by the agent sandbox, rerun the same `simply ...` command with escalated/network permission.
 - The CLI lives in `/Users/rasmusjensing/.cargo/bin/simply`; if it is not on PATH, call that absolute path.

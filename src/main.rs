@@ -34,11 +34,11 @@ fn main() -> Result<()> {
             None => rpassword::prompt_password("Simply API key: ")?,
         };
 
-        auth::save_credentials(&args.name, &args.account, &api_key, !args.no_switch)?;
+        let account = args.account.unwrap_or_default();
+        auth::save_credentials(&args.name, &account, &api_key, !args.no_switch)?;
         println!(
-            "Saved profile `{}` for {} in {}.",
+            "Saved profile `{}` in {}.",
             args.name,
-            args.account,
             config::config_path()?.display()
         );
         return Ok(());
@@ -51,7 +51,11 @@ fn main() -> Result<()> {
         } else {
             for account in accounts {
                 let marker = if account.current { "*" } else { " " };
-                println!("{marker} {}\t{}", account.name, account.account);
+                if account.account.is_empty() {
+                    println!("{marker} {}", account.name);
+                } else {
+                    println!("{marker} {}\t{}", account.name, account.account);
+                }
             }
         }
         return Ok(());
@@ -75,8 +79,8 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let credentials = auth::load_credentials(cli.profile, cli.account, cli.api_key)?;
-    let client = SimplyClient::new(cli.base_url, credentials.account, credentials.api_key)?;
+    let api_key = auth::load_api_key(cli.profile, cli.account, cli.api_key)?;
+    let client = SimplyClient::new(cli.base_url, api_key)?;
     let output = execute(&client, cli.command)?;
 
     print_output(output, cli.json)
@@ -97,20 +101,6 @@ fn execute(client: &SimplyClient, command: Command) -> Result<ApiOutput> {
         Command::Billing { command } => execute_billing(client, command),
         Command::Status { command } => execute_status(client, command),
         Command::Order { command } => execute_order(client, command),
-        Command::Ddns(args) => {
-            let mut params = vec![("hostname", args.hostname)];
-            push_optional(&mut params, "domain", args.domain);
-            push_optional(&mut params, "record", args.record);
-            push_optional(&mut params, "myip", args.myip);
-            push_optional(&mut params, "ttl", args.ttl.map(|ttl| ttl.to_string()));
-            client.get_text_query("/2/ddns/", &params)
-        }
-        Command::Dyndns(args) => {
-            let mut params = vec![("hostname", args.hostname)];
-            push_optional(&mut params, "domain", args.domain);
-            push_optional(&mut params, "myip", args.myip);
-            client.get_text_query("/2/dyndns/", &params)
-        }
     }
 }
 
@@ -392,15 +382,5 @@ fn update_dns_record_payload(args: UpdateDnsRecordArgs) -> DnsRecordPayload {
         ttl: args.ttl,
         priority: args.priority,
         comment: args.comment,
-    }
-}
-
-fn push_optional(
-    params: &mut Vec<(&'static str, String)>,
-    key: &'static str,
-    value: Option<String>,
-) {
-    if let Some(value) = value {
-        params.push((key, value));
     }
 }

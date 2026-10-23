@@ -11,16 +11,11 @@ use crate::output::ApiOutput;
 pub struct SimplyClient {
     http: HttpClient,
     base_url: String,
-    account: String,
     api_key: String,
 }
 
 impl SimplyClient {
-    pub fn new(base_url: String, account: String, api_key: String) -> Result<Self> {
-        if account.trim().is_empty() {
-            bail!("Simply account is empty; pass --account or set SIMPLY_ACCOUNT");
-        }
-
+    pub fn new(base_url: String, api_key: String) -> Result<Self> {
         if api_key.trim().is_empty() {
             bail!("Simply API key is empty; pass --api-key or set SIMPLY_API_KEY");
         }
@@ -33,7 +28,6 @@ impl SimplyClient {
         Ok(Self {
             http,
             base_url: base_url.trim_end_matches('/').to_owned(),
-            account,
             api_key,
         })
     }
@@ -47,10 +41,6 @@ impl SimplyClient {
             ApiOutput::Json(value) => Ok(value),
             ApiOutput::Text(_) => bail!("expected JSON response from API"),
         }
-    }
-
-    pub fn get_text_query(&self, path: &str, params: &[(&str, String)]) -> Result<ApiOutput> {
-        self.send(self.auth(self.http.get(self.url(path))).query(params))
     }
 
     pub fn post_json<T>(&self, path: &str, payload: &T) -> Result<ApiOutput>
@@ -92,7 +82,7 @@ impl SimplyClient {
     }
 
     fn auth(&self, request: RequestBuilder) -> RequestBuilder {
-        request.basic_auth(&self.account, Some(&self.api_key))
+        request.bearer_auth(&self.api_key)
     }
 
     fn url(&self, path: &str) -> String {
@@ -160,5 +150,56 @@ impl SimplyClient {
         }
 
         bail!(message)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{BufRead, BufReader, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    use super::*;
+
+    #[test]
+    fn sends_api_key_as_bearer_token() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let base_url = format!("http://{}", listener.local_addr().unwrap());
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut headers = Vec::new();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                if line.trim().is_empty() {
+                    break;
+                }
+                headers.push(line.trim().to_owned());
+            }
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+                )
+                .unwrap();
+            headers
+        });
+
+        let client = SimplyClient::new(base_url, "test-key".to_owned()).unwrap();
+        client.get_json("/2/my/products/").unwrap();
+
+        let headers = server.join().unwrap();
+        assert_eq!(headers[0], "GET /2/my/products/ HTTP/1.1");
+        let authorization = headers.iter().find_map(|header| {
+            let (name, value) = header.split_once(':')?;
+            name.eq_ignore_ascii_case("authorization")
+                .then(|| value.trim().to_owned())
+        });
+        assert_eq!(authorization.as_deref(), Some("Bearer test-key"));
+    }
+
+    #[test]
+    fn rejects_empty_api_key() {
+        assert!(SimplyClient::new("https://api.simply.com".to_owned(), " ".to_owned()).is_err());
     }
 }

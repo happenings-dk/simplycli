@@ -5,7 +5,7 @@ use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 #[command(about = "Command line client for the Simply.com API")]
 #[command(version)]
 pub struct Cli {
-    /// Simply.com account number, for example S123456.
+    /// Simply.com account number. No longer needed: the API key identifies the account.
     #[arg(long, env = "SIMPLY_ACCOUNT", global = true)]
     pub account: Option<String>,
 
@@ -89,10 +89,6 @@ pub enum Command {
         #[command(subcommand)]
         command: OrderCommand,
     },
-    /// User-friendly Dynamic DNS helper.
-    Ddns(DdnsArgs),
-    /// DynDNS protocol-compatible update endpoint.
-    Dyndns(DyndnsArgs),
 }
 
 #[derive(Debug, Args)]
@@ -101,9 +97,9 @@ pub struct LoginArgs {
     #[arg(long, default_value = "default")]
     pub name: String,
 
-    /// Simply.com account number, for example S123456.
+    /// Simply.com account number. No longer needed: the API key identifies the account.
     #[arg(long, env = "SIMPLY_ACCOUNT")]
-    pub account: String,
+    pub account: Option<String>,
 
     /// API key for the Simply.com account. If omitted, it is read from a hidden prompt.
     #[arg(long, env = "SIMPLY_API_KEY", hide_env_values = true)]
@@ -485,36 +481,4 @@ impl DomainAction {
             Self::None => "none",
         }
     }
-}
-
-#[derive(Debug, Args)]
-pub struct DdnsArgs {
-    /// Fully qualified hostname to create or update.
-    #[arg(long)]
-    pub hostname: String,
-    /// Domain to change records on.
-    #[arg(long)]
-    pub domain: Option<String>,
-    /// DNS record name. Overrides the name inferred from hostname.
-    #[arg(long)]
-    pub record: Option<String>,
-    /// IP address to set. If omitted, Simply uses the request client IP.
-    #[arg(long)]
-    pub myip: Option<String>,
-    /// TTL in seconds.
-    #[arg(long)]
-    pub ttl: Option<u32>,
-}
-
-#[derive(Debug, Args)]
-pub struct DyndnsArgs {
-    /// Fully qualified hostname to create or update.
-    #[arg(long)]
-    pub hostname: String,
-    /// Domain to change records on.
-    #[arg(long)]
-    pub domain: Option<String>,
-    /// IP address to set. If omitted, Simply uses the request client IP.
-    #[arg(long)]
-    pub myip: Option<String>,
 }

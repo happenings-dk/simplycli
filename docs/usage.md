@@ -7,14 +7,14 @@
 Save credentials for the default profile:
 
 ```sh
-simply login --account S123456
+simply login
 ```
 
 Save multiple profiles:
 
 ```sh
-simply login --name personal --account S123456
-simply login --name work --account S654321
+simply login --name personal
+simply login --name work
 simply accounts
 simply use work
 simply --profile personal products
@@ -22,9 +22,11 @@ simply --profile personal products
 
 Credential precedence:
 
-1. `--account` / `--api-key`
-2. `SIMPLY_ACCOUNT` / `SIMPLY_API_KEY`
+1. `--api-key`
+2. `SIMPLY_API_KEY`
 3. Saved profile in `~/.config/simply/config.json`
+
+The API key is sent as a Bearer token and identifies the account. `--account` / `SIMPLY_ACCOUNT` is no longer needed; it is still accepted so existing setups keep working.
 
 ## Products
 
@@ -88,11 +90,4 @@ simply mail add-account example.com --username hello --password '<password>'
 ```sh
 simply billing invoices
 simply status messages
-```
-
-## DDNS
-
-```sh
-simply ddns --hostname home.example.com
-simply dyndns --hostname home.example.com --myip 203.0.113.10
 ```

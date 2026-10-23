@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct StoredCredentials {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub account: String,
     pub api_key: String,
 }
@@ -48,10 +49,6 @@ pub fn save_credentials(
     make_current: bool,
 ) -> Result<PathBuf> {
     validate_name(name)?;
-
-    if account.trim().is_empty() {
-        bail!("account cannot be empty");
-    }
 
     if api_key.trim().is_empty() {
         bail!("API key cannot be empty");
@@ -188,9 +185,14 @@ fn load_config() -> Result<Option<Config>> {
         }
     };
 
-    let config_file: ConfigFile = serde_json::from_str(&contents)
-        .with_context(|| format!("failed to parse {}", path.display()))?;
-    let config = match config_file {
+    let config =
+        parse_config(&contents).with_context(|| format!("failed to parse {}", path.display()))?;
+    Ok(Some(config))
+}
+
+fn parse_config(contents: &str) -> Result<Config> {
+    let config_file: ConfigFile = serde_json::from_str(contents)?;
+    Ok(match config_file {
         ConfigFile::Multi(config) => config,
         ConfigFile::Legacy(credentials) => {
             let mut accounts = BTreeMap::new();
@@ -200,9 +202,7 @@ fn load_config() -> Result<Option<Config>> {
                 accounts,
             }
         }
-    };
-
-    Ok(Some(config))
+    })
 }
 
 fn save_config(config: &Config) -> Result<PathBuf> {
@@ -253,4 +253,51 @@ fn write_private_file(path: &PathBuf, contents: &[u8]) -> Result<()> {
 #[cfg(not(unix))]
 fn write_private_file(path: &PathBuf, contents: &[u8]) -> Result<()> {
     fs::write(path, contents).with_context(|| format!("failed to write {}", path.display()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn loads_profiles_with_and_without_account() {
+        let config = parse_config(
+            r#"{
+                "current": "work",
+                "accounts": {
+                    "personal": {"account": "S123456", "api_key": "key-1"},
+                    "work": {"api_key": "key-2"}
+                }
+            }"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.current.as_deref(), Some("work"));
+        assert_eq!(config.accounts["personal"].account, "S123456");
+        assert_eq!(config.accounts["personal"].api_key, "key-1");
+        assert_eq!(config.accounts["work"].account, "");
+        assert_eq!(config.accounts["work"].api_key, "key-2");
+    }
+
+    #[test]
+    fn loads_legacy_single_credentials_file() {
+        let config = parse_config(r#"{"account": "S123456", "api_key": "key-1"}"#).unwrap();
+
+        assert_eq!(config.current.as_deref(), Some("default"));
+        assert_eq!(config.accounts["default"].account, "S123456");
+        assert_eq!(config.accounts["default"].api_key, "key-1");
+    }
+
+    #[test]
+    fn does_not_write_empty_account() {
+        let credentials = StoredCredentials {
+            account: String::new(),
+            api_key: "key-1".to_owned(),
+        };
+
+        assert_eq!(
+            serde_json::to_string(&credentials).unwrap(),
+            r#"{"api_key":"key-1"}"#
+        );
+    }
 }

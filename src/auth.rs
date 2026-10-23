@@ -6,27 +6,21 @@ use crate::config;
 const SERVICE: &str = "simply";
 const ACCOUNT_ITEM: &str = "default-account";
 
-#[derive(Debug)]
-pub struct Credentials {
-    pub account: String,
-    pub api_key: String,
-}
-
 pub fn save_credentials(
     name: &str,
     account: &str,
     api_key: &str,
     make_current: bool,
 ) -> Result<()> {
-    if account.trim().is_empty() {
-        bail!("account cannot be empty");
-    }
-
     if api_key.trim().is_empty() {
         bail!("API key cannot be empty");
     }
 
     config::save_credentials(name, account, api_key, make_current)?;
+
+    if account.trim().is_empty() {
+        return Ok(());
+    }
 
     if let Ok(entry) = account_entry() {
         let _ = entry.set_password(account);
@@ -39,39 +33,32 @@ pub fn save_credentials(
     Ok(())
 }
 
-pub fn load_credentials(
+pub fn load_api_key(
     profile: Option<String>,
     account_override: Option<String>,
     api_key_override: Option<String>,
-) -> Result<Credentials> {
-    let stored = config::load_credentials(profile.as_deref())?;
+) -> Result<String> {
+    if let Some(api_key) = api_key_override {
+        return Ok(api_key);
+    }
 
-    let account = match account_override {
-        Some(account) => account,
-        None => stored
-            .map(|credentials| credentials.account)
-            .or_else(|| {
-                account_entry()
-                    .ok()
-                    .and_then(|entry| entry.get_password().ok())
-            })
-            .context("pass --account, set SIMPLY_ACCOUNT, or run `simply login`")?,
-    };
+    if let Some(stored) = config::load_credentials(profile.as_deref())? {
+        return Ok(stored.api_key);
+    }
 
-    let api_key = match api_key_override {
-        Some(api_key) => api_key,
-        None => config::load_credentials(profile.as_deref())?
-            .filter(|credentials| credentials.account == account)
-            .map(|credentials| credentials.api_key)
-            .or_else(|| {
-                api_key_entry(&account)
-                    .ok()
-                    .and_then(|entry| entry.get_password().ok())
-            })
-            .context("pass --api-key, set SIMPLY_API_KEY, or run `simply login`")?,
-    };
-
-    Ok(Credentials { account, api_key })
+    account_override
+        .filter(|account| !account.trim().is_empty())
+        .or_else(|| {
+            account_entry()
+                .ok()
+                .and_then(|entry| entry.get_password().ok())
+        })
+        .and_then(|account| {
+            api_key_entry(&account)
+                .ok()
+                .and_then(|entry| entry.get_password().ok())
+        })
+        .context("pass --api-key, set SIMPLY_API_KEY, or run `simply login`")
 }
 
 pub fn delete_credentials(name: Option<&str>, all: bool) -> Result<Option<String>> {

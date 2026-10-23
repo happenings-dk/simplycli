@@ -24,7 +24,7 @@ SIMPLYCLI_REPO_URL="$(pwd)" SIMPLYCLI_RAW_BASE="file://$(pwd)" bash scripts/inst
 
 ## Credentials
 
-Do not commit real Simply.com credentials. The CLI reads saved credentials from `~/.config/simply/config.json`, or from `SIMPLY_ACCOUNT` and `SIMPLY_API_KEY`.
+Do not commit real Simply.com credentials. The CLI reads saved credentials from `~/.config/simply/config.json`, or from `SIMPLY_API_KEY`.
 
 For testing command parsing without touching the real API, prefer help commands such as:
 
